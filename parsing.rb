@@ -6,23 +6,26 @@ require 'open-uri'
 require 'fileutils'
 
 dir_base = "downloads"
+dir_temp = "temp"
+dir_temp = File.join(dir_base,dir_temp)
+FileUtils.mkdir_p dir_temp unless File.exists?(dir_temp)
 
 # http://legiscam.cvj.sc.gov.br/fusion/cvj/diarios.jsp
 # https://www.joinville.sc.gov.br/jornal
 
-commissions = ["http://legiscam.cvj.sc.gov.br/fusion/cvj/pautaComissao.jsp?id=138021"]#,
-#	"http://legiscam.cvj.sc.gov.br/fusion/cvj/pautaComissao.jsp?id=138018",
-#	"http://legiscam.cvj.sc.gov.br/fusion/cvj/pautaComissao.jsp?id=138034",
-#	"http://legiscam.cvj.sc.gov.br/fusion/cvj/pautaComissao.jsp?id=138037",
-#	"http://legiscam.cvj.sc.gov.br/fusion/cvj/pautaComissao.jsp?id=138031",
-#	"http://legiscam.cvj.sc.gov.br/fusion/cvj/pautaComissao.jsp?id=2315315",
-#	"http://legiscam.cvj.sc.gov.br/fusion/cvj/pautaComissao.jsp?id=138028",
-#	"http://legiscam.cvj.sc.gov.br/fusion/cvj/pautaComissao.jsp?id=2315448"]
+commissions = ["http://legiscam.cvj.sc.gov.br/fusion/cvj/pautaComissao.jsp?id=138021",
+	"http://legiscam.cvj.sc.gov.br/fusion/cvj/pautaComissao.jsp?id=138018",
+	"http://legiscam.cvj.sc.gov.br/fusion/cvj/pautaComissao.jsp?id=138034",
+	"http://legiscam.cvj.sc.gov.br/fusion/cvj/pautaComissao.jsp?id=138037",
+	"http://legiscam.cvj.sc.gov.br/fusion/cvj/pautaComissao.jsp?id=138031",
+	"http://legiscam.cvj.sc.gov.br/fusion/cvj/pautaComissao.jsp?id=2315315",
+	"http://legiscam.cvj.sc.gov.br/fusion/cvj/pautaComissao.jsp?id=138028",
+	"http://legiscam.cvj.sc.gov.br/fusion/cvj/pautaComissao.jsp?id=2315448"]
 
 def txt_cleaning(text)
   scraping = text.to_s
-#	scraping.gsub!(/^\s+/, '')
-#	scraping.gsub!(/^\*\n/, '')
+	scraping.gsub!(/^\s+/, '')
+	scraping.gsub!(/^\*\n/, '')
 #	scraping.gsub!(/^CÂMARA DE VEREADORES DE JOINVILLE\nESTADO DE SANTA CATARINA\n/, '')
 #	scraping.gsub!(/^Divisão de Apoio às Comissões\n/,'')
 #	scraping.gsub!(/^Av\. Hermann August Lepper, 1\.100 - Saguaçu - CEP 89\.221-005 - Joinville\/SC\s+\d+\n/, '')
@@ -50,8 +53,8 @@ def txt_cleaning(text)
 	return scraping
 end
 
-def id_extracting(text)
-	id = /[0-9]*$/.match(text).to_s
+def url_id(text)
+	id = /[0-9]+$/.match(text).to_s
 	return id
 end
 
@@ -71,32 +74,44 @@ commissions.each do |commission|
 	@doc = Nokogiri::HTML(open(commission))
 	node = @doc.xpath("/html/body/div/table/tbody/tr[*]/td[1]/a/@href")
 	node.each do |uri|
-#		id_extracted = id_extracting(uri)
-		filename = "#{id_extracting(uri)}.txt"
-#		folder = File.join("downloads", filename)
-		unless File.exist?(File.join(dir_base, filename))
+		filename = "#{url_id(uri)}.txt"
+		temp_file = File.join(dir_temp, filename)
+		unless File.exists?(temp_file)
+			puts "Creating file: #{filename}"
+			File.open(temp_file, "w")
 			io = open(uri)
 			reader = PDF::Reader.new(io)
-#			puts "Creating file: #{filename}"
 			reader.pages.each do |page|
-	#			year_extracted =
-				unless (year_extracting(page) == nil)
-					year_dir = File.join(dir_base, year_extracting(page))
-					FileUtils.mkdir_p year_dir unless File.exists?(year_dir)
-				end
-				unless (commission_extracting(page) == nil)
-					commission_dir = File.join(dir_base, year_extracting(page), commission_extracting(page))
-					FileUtils.mkdir_p commission_dir unless File.exists?(commission_dir)
-				end
 				scraped = txt_cleaning(page)
-				dir_and_file = File.join(commission_dir, filename)
-				unless File.exist?(dir_and_file)
-#					puts dir_and_file
-#					puts scraped
-					File.open(dir_and_file, "a+") { |f| f << "#{scraped}" }
+				File.open(temp_file, "a+") { |f| f << "#{scraped}"}
+				scraped.each_line do |line|
+					puts line
+					unless (year_extracting(line) == "")
+						year = year_extracting(line)
+						commission = commission_extracting(line)
+					end
 				end
+#				puts "#{year}-#{commission}"
 			end
-		 	puts "Finished!\n\n"
+			puts "Finished!\n\n"
 		end
 	end
 end
+
+#files = Dir.entries(dir_temp).select { |f| !File.directory? f }
+#files.each do |filename|
+#	dir_and_file = File.join(dir_temp, filename)
+#	File.open(dir_and_file, "r") do |f|
+#		f.each_line do |line|
+#			unless (year_extracting(line) == "")
+#				year = year_extracting(line)
+#				commission = commission_extracting(line)
+#				FileUtils.mkdir_p File.join(dir_base, year) unless File.exists?(File.join(dir_base, year))
+#				FileUtils.mkdir_p File.join(dir_base, year, commission) unless File.exists?(File.join(dir_base, year, commission))
+#				name = "#{year}-#{commission}-#{filename}"
+#				File.rename(dir_and_file, File.join(dir_base, name))
+#			end
+#		end
+#	end
+#end
+puts "The End!"
