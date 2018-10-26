@@ -71,8 +71,8 @@ def commission_extracting(text)
 end
 
 commissions.each do |commission|
-	@doc = Nokogiri::HTML(open(commission))
-	node = @doc.xpath("/html/body/div/table/tbody/tr[*]/td[1]/a/@href")
+	doc = Nokogiri::HTML(open(commission))
+	node = doc.xpath("/html/body/div/table/tbody/tr[*]/td[1]/a/@href")
 	node.each do |uri|
 		filename = "#{url_id(uri)}.txt"
 		temp_file = File.join(dir_temp, filename)
@@ -85,19 +85,19 @@ commissions.each do |commission|
 				scraped = txt_cleaning(page)
 				File.open(temp_file, "a+") { |f| f << "#{scraped}"}
 				scraped.each_line do |line|
-					puts line
 					unless (year_extracting(line) == "")
-						year = year_extracting(line)
-						commission = commission_extracting(line)
+						@year = year_extracting(line)
+						@commission = commission_extracting(line)
 					end
 				end
-#				puts "#{year}-#{commission}"
 			end
+			name = "#{@year}_#{@commission}_#{filename}"
+			File.rename(temp_file, File.join(dir_base, name))
 			puts "Finished!\n\n"
 		end
 	end
 end
-
+puts "The End!"
 #files = Dir.entries(dir_temp).select { |f| !File.directory? f }
 #files.each do |filename|
 #	dir_and_file = File.join(dir_temp, filename)
@@ -114,4 +114,3 @@ end
 #		end
 #	end
 #end
-puts "The End!"
