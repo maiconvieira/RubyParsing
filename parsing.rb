@@ -52,8 +52,8 @@ def txt_cleaning(text)
 end
 
 def get_date_commision(text)
-	var = /(ORDINÁRIA|EXTRAORDINÁRIA|DE INSTALAÇÃO) - (\d{2})\/(\d{2})\/(\d{4})/.match(text).to_s
-	name = var.gsub!(/(ORDINÁRIA|EXTRAORDINÁRIA|DE INSTALAÇÃO)( - )(\d{2})(\/)(\d{2})(\/)(\d{4})/, '\7\5\3_\1')
+	var = /(ORDINÁRIA|EXTRAORDINÁRIA|INSTALAÇÃO) - (\d{2})\/(\d{2})\/(\d{4})/.match(text).to_s
+	name = var.gsub!(/(ORDINÁRIA|EXTRAORDINÁRIA|INSTALAÇÃO)( - )(\d{2})(\/)(\d{2})(\/)(\d{4})/, '\7\5\3_\1')
 	return name
 end
 
@@ -62,22 +62,27 @@ commissions.each do |commission|
 	doc = Nokogiri::HTML(open(commission))
 	node = doc.xpath("/html/body/div/table/tbody/tr[*]/td[1]/a/@href")
 	node.each do |uri|
-		id = /[0-9]+$/.match(uri).to_s
-		puts "Creating file: #{id}"
-		io = open(uri)
-		reader = PDF::Reader.new(io)
-		reader.pages.each do |page|
-			text << txt_cleaning(page)
-			text.each_line do |line|
-				@name = get_date_commision(line) unless (get_date_commision(line) == nil)
-			end
-			filename = "#{@name}_#{id}"
-			folder_filename = File.join(dir_base, filename)
-			unless File.exists?(folder_filename)
-				File.open(folder_filename, "w+") { |f| f << text }
-			end
-		end
-		puts "Finished!\n\n"
+		id = /\d+$/.match(uri).to_s
+#		Dir.glob("#{dir_base}/*") do |file|
+#			puts /\d+$/.match(file).to_s
+#			unless (/\d+$/.match(file).to_s == id)
+				puts "Creating file: #{id}"
+				io = open(uri)
+				reader = PDF::Reader.new(io)
+				reader.pages.each do |page|
+					text << txt_cleaning(page)
+					text.each_line do |line|
+						@name = get_date_commision(line) unless (get_date_commision(line) == nil)
+					end
+					filename = "#{@name}_#{id}"
+					folder_filename = File.join(dir_base, filename)
+					unless File.exists?(folder_filename)
+						File.open(folder_filename, "w+") { |f| f << text }
+					end
+				end
+				puts "Finished!\n\n"
+	#		end
+	#	end
 	end
 end
 puts "The End!"
