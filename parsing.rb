@@ -25,10 +25,10 @@ def txt_cleaning(text)
 	scraping.gsub!(/^\s+/, '')
 	scraping.gsub!(/^\*\n/, '')
 	scraping.gsub!(/^CÂMARA DE VEREADORES DE JOINVILLE\nESTADO DE SANTA CATARINA\n/, '')
-#	scraping.gsub!(/^Divisão de Apoio às Comissões\n/,'')
 	scraping.gsub!(/^Av\. Hermann August Lepper, 1\.100 - Saguaçu - CEP 89\.221-005 - Joinville\/SC\s+\d+\n/, '')
 	scraping.gsub!(/^E-mail: camara@cvj\.sc\.gov\.br - Home page:www\.cvj\.sc\.gov\.br\n/, '')
 	scraping.gsub!(/^Fone: \(47\) 2101-3333 - Fax: \(47\) 2101-3200$/, '')
+#	scraping.gsub!(/^Divisão de Apoio às Comissões\n/,'')
 #	scraping.gsub!(/^COMISSÃO DE LEGISLAÇÃO, JUSTIÇA E REDAÇÃO\n/, '')
 #	scraping.gsub!(/^Coordenadoria Jurídica Legislativa\n/, '')
 #	scraping.gsub!(/^COMISSÃO DE URBANISMO, OBRAS, SERVIÇOS PÚBLICOS E MEIO AMBIENTE\n/, '')
@@ -58,7 +58,6 @@ def get_date_commision(text)
 end
 
 text = ""
-
 commissions.each do |commission|
 	doc = Nokogiri::HTML(open(commission))
 	node = doc.xpath("/html/body/div/table/tbody/tr[*]/td[1]/a/@href")
