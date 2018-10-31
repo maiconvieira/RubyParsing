@@ -5,9 +5,6 @@ require 'pdf-reader'
 require 'open-uri'
 require 'fileutils'
 
-dir_base = "downloads"
-FileUtils.mkdir_p dir_base unless File.exists?(dir_base)
-
 # http://legiscam.cvj.sc.gov.br/fusion/cvj/diarios.jsp
 # https://www.joinville.sc.gov.br/jornal
 
@@ -59,36 +56,34 @@ end
 
 commissions.each do |commission|
 	doc = Nokogiri::HTML(open(commission))
-	comm = doc.xpath("/html/body/div/h2/text()")
-	dir_comm = File.join(dir_base, comm)
-	FileUtils.mkdir_p dir_comm unless File.exists?(dir_comm)
-	json = doc.xpath("/html/body/div/table/tbody/tr[1]")
-	metting = json.xpath("/td[2]/text()")
-	puts metting
-	href = json.xpath("/td[1]/a/@href")
-	text = ""
-	href.each do |uri|
-		id = /\d+$/.match(uri).to_s
-#		Dir.glob("#{dir_base}/*") do |file|
-#			puts /\d+$/.match(file).to_s
-#			unless (/\d+$/.match(file).to_s == id)
-				puts "Creating file: #{id}"
-				io = open(uri)
-				reader = PDF::Reader.new(io)
-				reader.pages.each do |page|
-					text << txt_cleaning(page)
-					text.each_line do |line|
-						@name = get_date_commision(line) unless (get_date_commision(line) == nil)
-					end
-					filename = "#{@name}_#{id}"
-					folder_filename = File.join(dir_base, filename)
-					unless File.exists?(folder_filename)
-						File.open(folder_filename, "w+") { |f| f << text }
-					end
+ 	comm = doc.xpath("/html/body/div/h2/text()").to_s.force_encoding('iso-8859-1').encode('utf-8')
+	FileUtils.mkdir_p comm unless File.exists?(comm)
+	parsed = doc.xpath("/html/body/div/table/tbody/tr[1]")
+	parsed.each do |node|
+		puts meeting = node.xpath("td[2]/text()").to_s.rjust(2,'0')
+		date = node.xpath("td[3]/text()").to_s.gsub!(/(\d{2})(\/)(\d{2})(\/)(\d{4})/, '\5\3\1')
+#		time = node.xpath("td[4]/text()").to_s.gsub!(/(\d{2})(:)(\d{2})/, '\1\3')
+		type = node.xpath("td[5]/text()").to_s.force_encoding('iso-8859-1').encode('utf-8')
+		subfolder = File.join(comm, type)
+		FileUtils.mkdir_p subfolder unless File.exists?(subfolder)
+#		local = node.xpath("td[6]/text()").to_s.force_encoding('iso-8859-1').encode('utf-8')
+		href = node.xpath("td[1]/a/@href")
+		text = ""
+		href.each do |uri|
+			id = /\d+$/.match(uri).to_s
+			filename = "#{date}#{meeting}-#{id}.txt"
+			puts "Creating file: #{filename}"
+			io = open(uri)
+			reader = PDF::Reader.new(io)
+			reader.pages.each do |page|
+				text << txt_cleaning(page)
+				folder_filename = File.join(subfolder, filename)
+				unless File.exists?(folder_filename)
+					File.open(folder_filename, "w+") { |f| f << text }
 				end
-				puts "Finished!\n\n"
-	#		end
-	#	end
+			end
+			puts "Finished!\n\n"
+		end
 	end
 end
 puts "The End!"
