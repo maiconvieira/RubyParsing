@@ -34,7 +34,15 @@ commissions.each do |commission|
 		meeting = node.xpath("td[2]/text()").to_s.rjust(2,'0')
 		date = node.xpath("td[3]/text()").to_s.gsub!(/(\d{2})(\/)(\d{2})(\/)(\d{4})/, '\5\3\1')
 #		time = node.xpath("td[4]/text()").to_s.gsub!(/(\d{2})(:)(\d{2})/, '\1\3')
-		type = node.xpath("td[5]/text()").to_s
+		ord = "Reunião Ordinária"
+		extra = "Reunião Extraordinária"
+		inst = "Reunião de Instalação"
+		get_type = node.xpath("td[5]/text()").to_s
+		if ( get_type==ord || get_type==extra || get_type==inst )
+			type = get_type
+		else
+			type = get_type.force_encoding('iso-8859-1').encode('utf-8')
+		end
 		subfolder = File.join(comm, type)
 		FileUtils.mkdir_p subfolder unless File.exists?(subfolder)
 #		local = node.xpath("td[6]/text()").to_s.force_encoding('iso-8859-1').encode('utf-8')
@@ -59,4 +67,4 @@ commissions.each do |commission|
 		end
 	end
 end
-puts " The End! "
+puts "The End!"
