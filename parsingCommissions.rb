@@ -57,11 +57,17 @@ def get_date_commision(text)
 	return name
 end
 
-text = ""
 commissions.each do |commission|
 	doc = Nokogiri::HTML(open(commission))
-	node = doc.xpath("/html/body/div/table/tbody/tr[*]/td[1]/a/@href")
-	node.each do |uri|
+	comm = doc.xpath("/html/body/div/h2/text()")
+	dir_comm = File.join(dir_base, comm)
+	FileUtils.mkdir_p dir_comm unless File.exists?(dir_comm)
+	json = doc.xpath("/html/body/div/table/tbody/tr[1]")
+	metting = json.xpath("/td[2]/text()")
+	puts metting
+	href = json.xpath("/td[1]/a/@href")
+	text = ""
+	href.each do |uri|
 		id = /\d+$/.match(uri).to_s
 #		Dir.glob("#{dir_base}/*") do |file|
 #			puts /\d+$/.match(file).to_s
