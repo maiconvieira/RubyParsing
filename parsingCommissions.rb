@@ -31,10 +31,10 @@ commissions.each do |commission|
 	FileUtils.mkdir_p comm unless File.exists?(comm)
 	parsed = doc.xpath("/html/body/div/table/tbody/tr[*]")
 	parsed.each do |node|
-		puts meeting = node.xpath("td[2]/text()").to_s.rjust(2,'0')
+		meeting = node.xpath("td[2]/text()").to_s.rjust(2,'0')
 		date = node.xpath("td[3]/text()").to_s.gsub!(/(\d{2})(\/)(\d{2})(\/)(\d{4})/, '\5\3\1')
 #		time = node.xpath("td[4]/text()").to_s.gsub!(/(\d{2})(:)(\d{2})/, '\1\3')
-		type = node.xpath("td[5]/text()").to_s.force_encoding('iso-8859-1').encode('utf-8')
+		type = node.xpath("td[5]/text()").to_s
 		subfolder = File.join(comm, type)
 		FileUtils.mkdir_p subfolder unless File.exists?(subfolder)
 #		local = node.xpath("td[6]/text()").to_s.force_encoding('iso-8859-1').encode('utf-8')
@@ -44,7 +44,7 @@ commissions.each do |commission|
 			id = /\d+$/.match(uri).to_s
 			filename = "#{date}#{meeting}-#{id}.txt"
 			folder_filename = File.join(subfolder, filename)
-#			unless File.exists?(folder_filename) do
+			unless File.file?(folder_filename)
 				puts "Creating file: #{filename}"
 				io = open(uri)
 				reader = PDF::Reader.new(io)
@@ -53,7 +53,9 @@ commissions.each do |commission|
 					File.open(folder_filename, "w+") { |f| f << text }
 				end
 				puts "Finished!\n\n"
-#			end
+			else
+				puts "File: #{filename} already exist!\n\n"
+			end
 		end
 	end
 end
