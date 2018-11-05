@@ -5,6 +5,7 @@ require 'pdf-reader'
 require 'open-uri'
 require 'fileutils'
 
+count = 0
 commissions = ["http://legiscam.cvj.sc.gov.br/fusion/cvj/pautaComissao.jsp?id=138021",
 	"http://legiscam.cvj.sc.gov.br/fusion/cvj/pautaComissao.jsp?id=138018",
 	"http://legiscam.cvj.sc.gov.br/fusion/cvj/pautaComissao.jsp?id=138034",
@@ -18,7 +19,11 @@ def txt_cleaning(text)
   scraping = text.to_s
 	scraping.gsub!(/^\s+/, '')
 	scraping.gsub!(/^\*\n/, '')
-	scraping.gsub!(/^CÂMARA DE VEREADORES DE JOINVILLE\nESTADO DE SANTA CATARINA\nDivisão de Apoio às Comissões\n/, '')
+	scraping.gsub!(/\n $/, '')
+	scraping.gsub!(/^CÂMARA DE VEREADORES DE JOINVILLE\nESTADO DE SANTA CATARINA\n/, '')
+	scraping.gsub!(/^Divisão de Apoio às Comissões\n/, '')
+	scraping.gsub!(/^Coordenadoria de Políticas Públicas\n/, '')
+	scraping.gsub!(/^Coordenadoria de Finanças\n/, '')
 	scraping.gsub!(/^Av\. Hermann August Lepper, 1\.100 - Saguaçu - CEP 89\.221-005 - Joinville\/SC\s+\d+\n/, '')
 	scraping.gsub!(/^E-mail: camara@cvj\.sc\.gov\.br - Home page:www\.cvj\.sc\.gov\.br\n/, '')
 	scraping.gsub!(/^Fone: \(47\) 2101-3333 - Fax: \(47\) 2101-3200$/, '')
@@ -33,7 +38,6 @@ commissions.each do |commission|
 	parsed.each do |node|
 		meeting = node.xpath("td[2]/text()").to_s.rjust(2,'0')
 		date = node.xpath("td[3]/text()").to_s.gsub!(/(\d{2})(\/)(\d{2})(\/)(\d{4})/, '\5\3\1')
-#		time = node.xpath("td[4]/text()").to_s.gsub!(/(\d{2})(:)(\d{2})/, '\1\3')
 		ord = "Reunião Ordinária"
 		extra = "Reunião Extraordinária"
 		inst = "Reunião de Instalação"
@@ -45,26 +49,24 @@ commissions.each do |commission|
 		end
 		subfolder = File.join(comm, type)
 		FileUtils.mkdir_p subfolder unless File.exists?(subfolder)
-#		local = node.xpath("td[6]/text()").to_s.force_encoding('iso-8859-1').encode('utf-8')
 		link = node.xpath("td[1]/a/@href")
 		text = ""
 		link.each do |uri|
+			count += 1
 			id = /\d+$/.match(uri).to_s
 			filename = "#{date}#{meeting}-#{id}.txt"
 			folder_filename = File.join(subfolder, filename)
 			unless File.file?(folder_filename)
-				puts "Creating file: #{filename}"
+				puts "#{count} Creating file..."
 				io = open(uri)
 				reader = PDF::Reader.new(io)
 				reader.pages.each do |page|
 					text << txt_cleaning(page)
 					File.open(folder_filename, "w+") { |f| f << text }
 				end
-				puts "Finished!\n\n"
 			else
-				puts "File: #{filename} already exist!\n\n"
+				puts "#{count} File already exist!"
 			end
 		end
 	end
 end
-puts "The End!"
